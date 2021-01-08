@@ -22,7 +22,7 @@ type Headers map[string]interface{}
 // Params is the request parameters
 type Params map[string]interface{}
 
-// New XML HTTP Request
+// New fetch instance
 func New(baseURL string, headers Headers, timeout time.Duration) (*XHR, error) {
 
 	if baseURL == "" {
@@ -44,53 +44,53 @@ func New(baseURL string, headers Headers, timeout time.Duration) (*XHR, error) {
 // GetJSON request
 func (x *XHR) GetJSON(path string, params Params, headers Headers, response interface{}) (int, error) {
 
-	// build headers
-	_headers := x.Headers
-
-	for k, v := range headers {
-		_headers[k] = v
+	// override headers
+	for k, v := range x.Headers {
+		if _, ok := headers[k]; !ok {
+			headers[k] = v
+		}
 	}
 
-	return GetJSON(x.BaseURL+path, params, _headers, response)
+	return GetJSON(x.BaseURL+path, params, headers, response)
 }
 
 // PostJSON request
-func (x *XHR) PostJSON(path string, body map[string]interface{}, headers Headers, response interface{}) (int, error) {
+func (x *XHR) PostJSON(path string, body Params, headers Headers, response interface{}) (int, error) {
 
-	// build headers
-	_headers := x.Headers
-
-	for k, v := range headers {
-		_headers[k] = v
+	// override headers
+	for k, v := range x.Headers {
+		if _, ok := headers[k]; !ok {
+			headers[k] = v
+		}
 	}
 
-	return PostJSON(x.BaseURL+path, body, _headers, response)
+	return PostJSON(x.BaseURL+path, body, headers, response)
 }
 
 // PutJSON request
-func (x *XHR) PutJSON(path string, body map[string]interface{}, headers Headers, response interface{}) (int, error) {
+func (x *XHR) PutJSON(path string, body Params, headers Headers, response interface{}) (int, error) {
 
-	// build headers
-	_headers := x.Headers
-
-	for k, v := range headers {
-		_headers[k] = v
+	// override headers
+	for k, v := range x.Headers {
+		if _, ok := headers[k]; !ok {
+			headers[k] = v
+		}
 	}
 
-	return PutJSON(x.BaseURL+path, body, _headers, response)
+	return PutJSON(x.BaseURL+path, body, headers, response)
 }
 
 // DeleteJSON request
 func (x *XHR) DeleteJSON(path string, params Params, headers Headers, response interface{}) (int, error) {
 
-	// build headers
-	_headers := x.Headers
-
-	for k, v := range headers {
-		_headers[k] = v
+	// override headers
+	for k, v := range x.Headers {
+		if _, ok := headers[k]; !ok {
+			headers[k] = v
+		}
 	}
 
-	return DeleteJSON(x.BaseURL+path, params, _headers, response)
+	return DeleteJSON(x.BaseURL+path, params, headers, response)
 }
 
 // GetJSON static
@@ -111,7 +111,6 @@ func GetJSON(url string, params Params, headers Headers, response interface{}) (
 
 	req.URL.RawQuery = q.Encode()
 
-	// build headers
 	if headers == nil {
 		headers = Headers{}
 	}
@@ -125,7 +124,7 @@ func GetJSON(url string, params Params, headers Headers, response interface{}) (
 	}
 
 	// send request
-	client := http.Client{}
+	client := http.Client{Timeout: time.Second * 10}
 	resp, err := client.Do(req)
 
 	if err != nil {
@@ -154,6 +153,10 @@ func PostJSON(url string, body map[string]interface{}, headers Headers, response
 
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 
+	if headers == nil {
+		headers = Headers{}
+	}
+
 	// auto insert JSON headers
 	headers["Content-Type"] = "application/json"
 	headers["Accept"] = "application/json"
@@ -163,7 +166,7 @@ func PostJSON(url string, body map[string]interface{}, headers Headers, response
 	}
 
 	// send request
-	client := http.Client{}
+	client := http.Client{Timeout: time.Second * 10}
 	resp, err := client.Do(req)
 
 	if err != nil {
@@ -191,6 +194,10 @@ func PutJSON(url string, body map[string]interface{}, headers Headers, response 
 
 	req, err := http.NewRequest("PUT", url, bytes.NewReader(b))
 
+	if headers == nil {
+		headers = Headers{}
+	}
+
 	// auto insert JSON headers
 	headers["Content-Type"] = "application/json"
 	headers["Accept"] = "application/json"
@@ -200,7 +207,7 @@ func PutJSON(url string, body map[string]interface{}, headers Headers, response 
 	}
 
 	// send request
-	client := http.Client{}
+	client := http.Client{Timeout: time.Second * 10}
 	resp, err := client.Do(req)
 
 	if err != nil {
@@ -225,7 +232,6 @@ func DeleteJSON(url string, params Params, headers Headers, response interface{}
 		return -1, err
 	}
 
-	// build headers
 	if headers == nil {
 		headers = Headers{}
 	}
@@ -239,7 +245,7 @@ func DeleteJSON(url string, params Params, headers Headers, response interface{}
 	}
 
 	// send request
-	client := http.Client{}
+	client := http.Client{Timeout: time.Second * 10}
 	resp, err := client.Do(req)
 
 	if err != nil {
